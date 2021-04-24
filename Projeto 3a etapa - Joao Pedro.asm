@@ -3,6 +3,8 @@
 	.word 'e', 'd', 'a', 'q', 'd', 'q', 'a', 'd', 'e', 'e', 'q', 'a', 'a', 'a', 'a', 'd', 'q', 'a', 'q', 'e', 'd', 'e', 'e', 'e', 'q', 'e', 'q', 'a', 'a', 'q', 'e', 'e', 'e', 'q', 'a', 'e', 'e', 'e', 'a', 'e', 'e', 'e', 'd', 'q', 'q', 'e', 'q', 'q', 'd', 'd', 'q', 'd', 'd', 'd', 'd', 'e', 'q', 'q', 'q', 'q', 'q', 'a', 'q', 'e', 'q', 'q'
 .text
 main:
+	addi $s5, $zero, 0 # state
+	addi $s6, $zero, 0 # index outer loop
 	j fundo
 fundo:
 	addi $t1, $zero, 128
@@ -49,6 +51,7 @@ fimfor1:
 fimlinha1:
 	j colors
 
+# cores
 colors:
 	addi $t1, $zero, 128
 	addi $t2, $zero, 68
@@ -106,7 +109,33 @@ fimfor2:
 	j forlinha2
 fimlinha2:
 	jal wait
-	
+
+
+
+# state of game
+state:
+	beq $s5, 0, playnotes
+	beq $s5, 1, input
+	beq $s5, 2, fimjogo
+
+# play notes in order
+playnotes:
+	beq $s6, 66, fimouter
+	lui $s4, 0x1001
+	addi $s3, $zero, 0
+fornotes:
+	beq $s3, $s6, fimnotes
+	lw $s2, 0($s4)
+	beq $s2, 113, bluecheck
+	beq $s2, 101, yellowcheck
+	beq $s2, 97, redcheck
+	beq $s2, 100, greencheck
+contnotes:
+	addi $s4, $s4, 4
+	addi $s3, $s3, 1
+	j fornotes
+bluecheck:
+	j colors1
 colors1:
 	addi $t1, $zero, 128
 	addi $t2, $zero, 68
@@ -169,8 +198,9 @@ fimlinha3:
 	addi $a3, $zero, 64
 	addi $v0, $zero, 33
 	syscall
-	jal wait
-	
+	j contnotes
+yellowcheck:
+	j colors2
 colors2:
 	addi $t1, $zero, 128
 	addi $t2, $zero, 68
@@ -233,8 +263,9 @@ fimlinha4:
 	addi $a3, $zero, 64
 	addi $v0, $zero, 33
 	syscall
-	jal wait
-	
+	j contnotes
+redcheck:
+	j colors3
 colors3:
 	addi $t1, $zero, 128
 	addi $t2, $zero, 68
@@ -297,9 +328,9 @@ fimlinha5:
 	addi $a3, $zero, 64
 	addi $v0, $zero, 33
 	syscall
-	jal wait
-	jal wait
-	
+	j contnotes
+greencheck:
+	j colors4
 colors4:
 	addi $t1, $zero, 128
 	addi $t2, $zero, 68
@@ -362,8 +393,48 @@ fimlinha6:
 	addi $a3, $zero, 64
 	addi $v0, $zero, 33
 	syscall
-	j colors
-	jal wait
+	j contnotes
+fimnotes:
+	# lui $s4, 0x1001
+	addi $s5, $zero, 1
+	addi $s6, $s6, 1
+	j state
+fimouter:
+	addi $s5, $zero, 2
+	j state
+
+# user input
+lacostring:
+	lui $t8, 0x1001
+	addi $s3, $zero, 0
+forstring:
+	beq $s3, $s6, fiminput
+	lw $s2, 0($t8)
+input:
+	lui $s1, 0xffff
+	lw $s0, 0($s1)
+	bne $s0, $zero, sailaco
+	j input
+sailaco:
+	lw $t9, 4($s1)
+	bne $t9, $t8, erro
+	addi $t8, $t8, 4
+	addi $s3, $s3, 1
+	j forstring
+fiminput:
+	addi $s5, $zero, 0
+	j state
+	
+# input errado, reinicia do começo
+erro:
+	addi $s6, $zero, 0
+	addi $s5, $zero, 0
+	j state
+
+# encerra jogo
+fimjogo:
+	addi $v0, $zero, 10
+	syscall
 	
 # delay
 wait:
